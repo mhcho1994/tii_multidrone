@@ -1,4 +1,4 @@
-# IEEE 2023 UAV Chase Challenge
+# TII Multi-Drone Simulation Environment
 
 ## Submission
 To write your solutions, fork this repository.

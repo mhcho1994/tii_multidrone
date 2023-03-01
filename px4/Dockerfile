@@ -1,5 +1,5 @@
 FROM ubuntu:20.04
-LABEL maintainer="James Goppert <james.goppert@gmail.com>"
+LABEL maintainer="James Goppert <james.goppert@gmail.com>, Minhyun Cho <cho515@purdue.edu>"
 
 # environment
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -124,11 +124,16 @@ RUN git clone --recursive https://github.com/eProsima/Fast-DDS.git -b v2.7.0 --d
   && make install \
   && rm -rf /tmp/*
 
+# get the host user, group information to setup user
+ARG HOST_USER_NAME HOST_USER_ID HOST_GROUP_NAME HOST_GROUP_ID
+
 # setup user
-RUN addgroup docker
-RUN adduser --disabled-password --gecos '' docker --ingroup docker --ingroup dialout --shell /bin/bash
-RUN adduser docker sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN groupadd --gid ${HOST_GROUP_ID} docker \
+ && adduser --disabled-password --gecos '' docker --uid ${HOST_USER_ID} --gid ${HOST_GROUP_ID}\
+ && adduser docker sudo \
+ && adduser docker dialout \
+ && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 USER docker
 WORKDIR /home/docker
 
@@ -139,7 +144,8 @@ RUN pip3 install kconfiglib pyros-genmsg pyulog nunavut --user
 ENV PATH="/home/docker/bin:$PATH"
 # note that px4 is a submodule, so we need to
 # run docker build in parent context to grab .git
-COPY --chown=docker:docker .git .git
+WORKDIR /home/docker
+# COPY --chown=docker:docker .git .git
 COPY --chown=docker:docker ./px4/bin ./bin
 COPY --chown=docker:docker ./px4/PX4-Autopilot ./px4/PX4-Autopilot
 #RUN px4_build.sh

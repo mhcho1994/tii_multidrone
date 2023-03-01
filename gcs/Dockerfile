@@ -1,10 +1,11 @@
 FROM ubuntu:20.04
-LABEL maintainer="James Goppert <james.goppert@gmail.com>"
+LABEL maintainer="James Goppert <james.goppert@gmail.com>, Minhyun Cho <cho515@purdue.edu>"
 
-#  install dependencies
+# install dependencies
 RUN apt-get update && apt-get remove modemmanager -y \
   && apt-get install --no-install-recommends -y \
   vim \
+  terminator \
   gstreamer1.0-plugins-bad \
   gstreamer1.0-libav \
   gstreamer1.0-gl \
@@ -20,8 +21,12 @@ RUN apt-get update && apt-get remove modemmanager -y \
   && apt-get -y autoremove \
 	&& apt-get clean
 
+# get the host user, group information to setup user
+ARG HOST_USER_NAME HOST_USER_ID HOST_GROUP_NAME HOST_GROUP_ID
+
 # setup user
-RUN adduser --disabled-password --gecos '' docker \
+RUN groupadd --gid ${HOST_GROUP_ID} docker \
+ && adduser --disabled-password --gecos '' docker --uid ${HOST_USER_ID} --gid ${HOST_GROUP_ID}\
  && adduser docker sudo \
  && adduser docker dialout \
  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
