@@ -8,24 +8,28 @@ COPY docker_clean.sh /docker_clean.sh
 RUN chmod +x /docker_clean.sh
 
 # Install base packages
-RUN apt-get -y update && \
-	apt-get -y upgrade && \
-	apt-get install --no-install-recommends -y \
+RUN apt-get -y update \
+	&& apt-get -y upgrade \
+	&& apt-get --no-install-recommends -y install\
 		sudo \
 		locales \
-		&& \
-	/docker_clean.sh
+	&& /docker_clean.sh
 
 # set locale
 RUN locale-gen en_US.UTF-8
 
+# get the host user, group information to setup user
+ARG HOST_USER_NAME HOST_USER_ID HOST_GROUP_NAME HOST_GROUP_ID
+
 # set user as default so install scripts look the same for local host install
 RUN groupadd -r -g 110 render \
- && adduser --disabled-password --gecos '' user \
- && adduser user sudo \
- && adduser user render \
+ && groupadd --gid ${HOST_GROUP_ID} docker \
+ && adduser --disabled-password --gecos '' docker --uid ${HOST_USER_ID} --gid ${HOST_GROUP_ID}\
+ && adduser docker sudo \
+ && adduser docker render \
  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-USER user
+
+USER docker
 
 # initialise system locale
 ENV LANG=en_US.UTF-8
@@ -53,11 +57,11 @@ RUN /tmp/install/extra.sh && /docker_clean.sh
 RUN sudo rm /etc/apt/apt.conf.d/docker-clean
 
 # create setting directory for ignition gazebo
-RUN mkdir -p /home/user/.ignition \
-  && chown -R user:user /home/user/.ignition
+RUN mkdir -p /home/docker/.ignition \
+  && chown -R docker:docker /home/docker/.ignition
 
 # avoid .bashrc warning
-RUN mkdir -p /home/user/.bash_completion.d
+RUN mkdir -p /home/docker/.bash_completion.d
 
 # create XDG runtime dir
 RUN mkdir /tmp/runtime-docker && sudo chmod 700 /tmp/runtime-docker
@@ -71,7 +75,7 @@ RUN . /opt/ros/foxy/setup.sh \
   && sudo dpkg -i *.deb
 
 # create workdir
-RUN sudo mkdir -p /workdir && sudo chown -R user:user /workdir
+RUN sudo mkdir -p /workdir && sudo chown -R docker:docker /workdir
 WORKDIR /workdir
 
 # setup .bashrc
